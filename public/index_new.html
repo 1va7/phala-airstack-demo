@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockTargeter</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f7f7f7; color: #333; }
+  .container { width: 80%; max-width: 600px; margin: 50px auto; text-align: center; padding: 20px; background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+  .input-group { margin-bottom: 10px; }
+  .address-input { width: 70%; padding: 10px; margin-right: 10px; }
+  .weight-input { width: 10%; padding: 10px; margin-right: 10px; }
+  #addAddress { padding: 10px; }
+  .output { margin-top: 20px; text-align: left; white-space: pre-line; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>BlockTargeter</h1>
+  <p>Make every airdrop worthy</p>
+  <div id="addressList">
+    <div class="input-group">
+      <input type="text" class="address-input" placeholder="Enter target address">
+      <input type="number" class="weight-input" placeholder="Weight">
+      <button class="removeAddress">Remove</button>
+    </div>
+  </div>
+  <button id="addAddress">Add Address</button>
+  <button id="calculate">Calculate</button>
+  <div class="output" id="output"></div>
+</div>
+
+<script>
+  document.getElementById('addAddress').addEventListener('click', function() {
+    var addressList = document.getElementById('addressList');
+    var inputGroup = document.createElement('div');
+    inputGroup.className = 'input-group';
+    inputGroup.innerHTML = `
+      <input type="text" class="address-input" placeholder="Enter target address">
+      <input type="number" class="weight-input" placeholder="Weight">
+      <button class="removeAddress">Remove</button>
+    `;
+    addressList.appendChild(inputGroup);
+  });
+
+  document.getElementById('addressList').addEventListener('click', function(e) {
+    if (e.target.className === 'removeAddress') {
+      e.target.parentElement.remove();
+    }
+  });
+
+  document.getElementById('calculate').addEventListener('click', function() {
+    var addressInputs = document.querySelectorAll('.address-input');
+    var weightInputs = document.querySelectorAll('.weight-input');
+    var outputDiv = document.getElementById('output');
+    var addresses = [];
+    
+    addressInputs.forEach(function(input, index) {
+      if (input.value) {
+        addresses.push({ address: input.value, weight: weightInputs[index].value });
+      }
+    });
+
+    if (addresses.length === 0) {
+      outputDiv.textContent = 'Please enter at least one target address.';
+      return;
+    }
+
+    outputDiv.textContent = 'Calculating scores...';
+
+    // 发送 POST 请求到服务器
+    fetch('http://localhost:3000/calculate-scores', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ addresses: addresses })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data && data.length) {
+        outputDiv.innerHTML = data.map(entry => `Address: ${entry.address}, Score: ${entry.score}`).join('\n');
+      } else {
+        outputDiv.textContent = 'Error fetching scores.';
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      outputDiv.textContent = 'Error fetching scores.';
+    });
+  });
+</script>
+</body>
+</html>
